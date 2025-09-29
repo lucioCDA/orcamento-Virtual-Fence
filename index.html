@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orçamento de Segurança Eletrônica</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-blue-600">
+    <div class="min-h-screen p-4">
+        <div class="max-w-6xl mx-auto">
+            <div class="bg-blue-600 text-white p-6 mb-4 rounded-t-lg flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold mb-2">Orçamento de Segurança Eletrônica</h1>
+                    <p class="text-blue-100">Preencha as quantidades e gere sua planilha Excel</p>
+                </div>
+                <button onclick="downloadExcel()" class="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-all flex items-center gap-2 shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Baixar Excel
+                </button>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-xl">
+                <div class="p-6 border-b bg-gray-50">
+                    <p class="text-sm font-semibold text-gray-700 mb-3">Selecione a Tabela de Preços:</p>
+                    <div class="flex gap-3 flex-wrap">
+                        <button onclick="selectTable('A')" id="btnA" class="px-6 py-3 rounded-lg font-semibold transition-all bg-white text-gray-700 hover:bg-gray-100 border-2 border-gray-200">
+                            <div>Tabela A</div>
+                            <div class="text-xs mt-1">30%</div>
+                        </button>
+                        <button onclick="selectTable('B')" id="btnB" class="px-6 py-3 rounded-lg font-semibold transition-all bg-white text-gray-700 hover:bg-gray-100 border-2 border-gray-200">
+                            <div>Tabela B</div>
+                            <div class="text-xs mt-1">50%</div>
+                        </button>
+                        <button onclick="selectTable('C')" id="btnC" class="px-6 py-3 rounded-lg font-semibold transition-all bg-blue-600 text-white shadow-lg">
+                            <div>Tabela C</div>
+                            <div class="text-xs mt-1">100%</div>
+                        </button>
+                        <button onclick="selectTable('D')" id="btnD" class="px-6 py-3 rounded-lg font-semibold transition-all bg-white text-gray-700 hover:bg-gray-100 border-2 border-gray-200">
+                            <div>Tabela D</div>
+                            <div class="text-xs mt-1">Custo</div>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="bg-gray-100 border-b-2 border-gray-300">
+                                <th class="text-left p-4 font-semibold text-gray-700">Item</th>
+                                <th class="text-center p-4 font-semibold text-gray-700 w-40">Quantidade</th>
+                                <th class="text-right p-4 font-semibold text-gray-700 w-36">Valor Unit.</th>
+                                <th class="text-right p-4 font-semibold text-gray-700 w-36">Instalação</th>
+                                <th class="text-right p-4 font-semibold text-gray-700 w-36">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                        <tfoot>
+                            <tr class="bg-blue-600 text-white">
+                                <td colspan="4" class="p-4 text-right font-bold text-lg">TOTAL GERAL:</td>
+                                <td class="p-4 text-right font-bold text-xl" id="totalGeral">R$ 0,00</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const items = [
+            { id: 1, name: 'Câmera IP Bullet Positivo', install: 110, A: 237.89, B: 274.49, C: 365.98, D: 182.99 },
+            { id: 2, name: 'Câmera IM5', install: 110, A: 557.60, B: 643.38, C: 857.84, D: 428.92 },
+            { id: 3, name: 'Central de Alarme AMT 1000 Smart', install: 150, A: 434.36, B: 501.18, C: 668.24, D: 334.12 },
+            { id: 4, name: 'Sensor Interno IVP 1000 Sem Fio', install: 80, A: 107.64, B: 124.20, C: 165.60, D: 82.80 },
+            { id: 5, name: 'Sensor Externo IVP 7000 Sem Fio', install: 80, A: 475.02, B: 548.10, C: 730.80, D: 365.40 },
+            { id: 6, name: 'Controle XAC 2003', install: 0, A: 25.87, B: 29.85, C: 39.80, D: 19.90 },
+            { id: 7, name: 'Sirene', install: 0, A: 24.58, B: 28.37, C: 37.82, D: 18.91 },
+            { id: 8, name: 'Bateria Central', install: 0, A: 86.46, B: 99.77, C: 133.02, D: 66.51 },
+            { id: 9, name: 'Poste', install: 0, A: 1560.00, B: 1800.00, C: 2400.00, D: 1200.00 },
+            { id: 10, name: 'Security Box', install: 150, A: 1950.00, B: 2250.00, C: 3000.00, D: 1500.00 },
+            { id: 11, name: 'Grade Proteção para Câmeras', install: 0, A: 44.62, B: 51.48, C: 68.64, D: 34.32 },
+            { id: 12, name: 'Fonte Chaveada 12V', install: 0, A: 41.60, B: 48.00, C: 64.00, D: 32.00 },
+            { id: 13, name: 'Hub', install: 0, A: 59.67, B: 68.85, C: 91.80, D: 45.90 },
+            { id: 14, name: 'Cabo Manga 6 Vias (metro)', install: 0, A: 7.80, B: 9.00, C: 12.00, D: 6.00 },
+            { id: 15, name: 'Cabo Manga 4 Vias (metro)', install: 0, A: 5.20, B: 6.00, C: 8.00, D: 4.00 },
+            { id: 16, name: 'Cabo de Energia (metro)', install: 0, A: 1.30, B: 1.50, C: 2.00, D: 1.00 },
+            { id: 17, name: 'Cabo CFTV (metro)', install: 0, A: 1.08, B: 1.25, C: 1.66, D: 0.83 },
+            { id: 18, name: 'Cabo de Rede (metro)', install: 0, A: 1.30, B: 1.50, C: 2.00, D: 1.00 },
+            { id: 19, name: 'Régua de Energia', install: 0, A: 26.00, B: 30.00, C: 40.00, D: 20.00 },
+            { id: 20, name: 'Caixa de Passagem Emenda', install: 0, A: 20.80, B: 24.00, C: 32.00, D: 16.00 },
+            { id: 21, name: 'Fita Isolante', install: 0, A: 4.55, B: 5.25, C: 7.00, D: 3.50 },
+            { id: 22, name: 'Controle de Acesso Facial 3531', install: 0, A: 961.99, B: 1109.99, C: 1479.98, D: 739.99 },
+            { id: 23, name: 'Controle de Acesso Facial 3532', install: 0, A: 1104.87, B: 1274.85, C: 1699.80, D: 849.90 },
+            { id: 24, name: 'Controle de Acesso Facial 3532 MF W', install: 0, A: 1560.00, B: 1800.00, C: 2400.00, D: 1200.00 }
+        ];
+
+        let selectedTable = 'C';
+        let quantities = {};
+
+        function selectTable(table) {
+            selectedTable = table;
+            ['A', 'B', 'C', 'D'].forEach(t => {
+                const btn = document.getElementById('btn' + t);
+                if (t === table) {
+                    btn.className = 'px-6 py-3 rounded-lg font-semibold transition-all bg-blue-600 text-white shadow-lg';
+                } else {
+                    btn.className = 'px-6 py-3 rounded-lg font-semibold transition-all bg-white text-gray-700 hover:bg-gray-100 border-2 border-gray-200';
+                }
+            });
+            renderTable();
+        }
+
+        function updateQuantity(id, value) {
+            quantities[id] = parseFloat(value) || 0;
+            calculateTotals();
+        }
+
+        function calculateTotals() {
+            let total = 0;
+            items.forEach(item => {
+                const qty = quantities[item.id] || 0;
+                const price = item[selectedTable];
+                const installCost = item.install * qty;
+                const itemTotal = (qty * price) + installCost;
+                total += itemTotal;
+
+                document.getElementById('total-' + item.id).textContent = 'R$ ' + itemTotal.toFixed(2);
+                document.getElementById('install-' + item.id).textContent = 'R$ ' + installCost.toFixed(2);
+            });
+            document.getElementById('totalGeral').textContent = 'R$ ' + total.toFixed(2);
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            items.forEach((item, index) => {
+                const qty = quantities[item.id] || 0;
+                const price = item[selectedTable];
+                const installCost = item.install * qty;
+                const itemTotal = (qty * price) + installCost;
+
+                const tr = document.createElement('tr');
+                tr.className = index % 2 === 0 ? 'bg-white border-b' : 'bg-gray-50 border-b';
+                tr.innerHTML = `
+                    <td class="p-4 text-sm text-gray-800">${item.name}</td>
+                    <td class="p-4">
+                        <input type="number" min="0" step="0.01" value="${qty || ''}" 
+                            onchange="updateQuantity(${item.id}, this.value)"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="0">
+                    </td>
+                    <td class="p-4 text-right text-sm text-gray-700">R$ ${price.toFixed(2)}</td>
+                    <td class="p-4 text-right text-sm text-gray-700" id="install-${item.id}">R$ ${installCost.toFixed(2)}</td>
+                    <td class="p-4 text-right font-semibold text-gray-900" id="total-${item.id}">R$ ${itemTotal.toFixed(2)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            calculateTotals();
+        }
+
+        function downloadExcel() {
+            const wb = XLSX.utils.book_new();
+
+            const valoresData = [
+                ['TABELA DE VALORES - EQUIPAMENTOS PARA INSTALAÇÃO'],
+                [],
+                ['ITEM', 'Valor Instalação', 'Tabela A (30%)', 'Tabela B (50%)', 'Tabela C (100%)', 'Tabela D (Custo)']
+            ];
+            items.forEach(item => {
+                valoresData.push([item.name, item.install, item.A, item.B, item.C, item.D]);
+            });
+            const wsValores = XLSX.utils.aoa_to_sheet(valoresData);
+            wsValores['!cols'] = [{ wch: 40 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
+
+            const orcamentoData = [
+                ['ORÇAMENTO DE SEGURANÇA ELETRÔNICA'],
+                [],
+                ['SELECIONE A TABELA:', selectedTable, '', '', '(Digite: A, B, C ou D)'],
+                [],
+                [],
+                ['ITEM', 'Quantidade', 'Valor Unitário', 'Instalação', 'Total']
+            ];
+
+            const startRow = 7;
+            items.forEach((item, index) => {
+                const excelRow = startRow + index;
+                const qty = quantities[item.id] || 0;
+                orcamentoData.push([
+                    item.name,
+                    qty,
+                    { f: `IF($D$3="A",VALORES!C${index+4},IF($D$3="B",VALORES!D${index+4},IF($D$3="C",VALORES!E${index+4},IF($D$3="D",VALORES!F${index+4},0))))` },
+                    { f: `VALORES!B${index+4}*B${excelRow}` },
+                    { f: `B${excelRow}*C${excelRow}+D${excelRow}` }
+                ]);
+            });
+
+            const totalRow = startRow + items.length;
+            orcamentoData.push([]);
+            orcamentoData.push(['', '', '', 'TOTAL GERAL:', { f: `SUM(E${startRow}:E${totalRow-1})` }]);
+
+            const wsOrcamento = XLSX.utils.aoa_to_sheet(orcamentoData);
+            wsOrcamento['!cols'] = [{ wch: 40 }, { wch: 15 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
+            wsOrcamento['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } },
+                { s: { r: 2, c: 2 }, e: { r: 2, c: 3 } }
+            ];
+
+            XLSX.utils.book_append_sheet(wb, wsValores, 'VALORES');
+            XLSX.utils.book_append_sheet(wb, wsOrcamento, 'ORÇAMENTO');
+            XLSX.writeFile(wb, 'Orcamento_Seguranca_Eletronica.xlsx');
+        }
+
+        renderTable();
+    </script>
+</body>
+</html>
