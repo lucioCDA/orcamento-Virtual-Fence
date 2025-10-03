@@ -161,53 +161,62 @@
         }
 
         function downloadExcel() {
+            // Filtrar apenas itens com quantidade preenchida
+            const itemsWithQuantity = items.filter(item => quantities[item.id] && quantities[item.id] > 0);
+            
+            if (itemsWithQuantity.length === 0) {
+                alert('Por favor, preencha pelo menos uma quantidade antes de gerar o orçamento.');
+                return;
+            }
+
             const wb = XLSX.utils.book_new();
 
-            const valoresData = [
-                ['TABELA DE VALORES - EQUIPAMENTOS PARA INSTALAÇÃO'],
-                [],
-                ['ITEM', 'Valor Instalação', 'Tabela A (30%)', 'Tabela B (50%)', 'Tabela C (100%)', 'Tabela D (Custo)']
-            ];
-            items.forEach(item => {
-                valoresData.push([item.name, item.install, item.A, item.B, item.C, item.D]);
-            });
-            const wsValores = XLSX.utils.aoa_to_sheet(valoresData);
-            wsValores['!cols'] = [{ wch: 40 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
-
+            // Criar planilha de orçamento apenas com itens preenchidos
             const orcamentoData = [
                 ['ORÇAMENTO DE SEGURANÇA ELETRÔNICA'],
                 [],
-                ['SELECIONE A TABELA:', selectedTable, '', '', '(Digite: A, B, C ou D)'],
-                [],
+                ['Tabela de Preços:', selectedTable === 'A' ? 'Tabela A (30%)' : selectedTable === 'B' ? 'Tabela B (50%)' : selectedTable === 'C' ? 'Tabela C (100%)' : 'Tabela D (Custo)'],
                 [],
                 ['ITEM', 'Quantidade', 'Valor Unitário', 'Instalação', 'Total']
             ];
 
-            const startRow = 7;
-            items.forEach((item, index) => {
-                const excelRow = startRow + index;
-                const qty = quantities[item.id] || 0;
+            let totalGeral = 0;
+
+            itemsWithQuantity.forEach(item => {
+                const qty = quantities[item.id];
+                const price = item[selectedTable];
+                const installCost = item.install * qty;
+                const itemTotal = (qty * price) + installCost;
+                totalGeral += itemTotal;
+
                 orcamentoData.push([
                     item.name,
                     qty,
-                    { f: `IF($D$3="A",VALORES!C${index+4},IF($D$3="B",VALORES!D${index+4},IF($D$3="C",VALORES!E${index+4},IF($D$3="D",VALORES!F${index+4},0))))` },
-                    { f: `VALORES!B${index+4}*B${excelRow}` },
-                    { f: `B${excelRow}*C${excelRow}+D${excelRow}` }
+                    price,
+                    installCost,
+                    itemTotal
                 ]);
             });
 
-            const totalRow = startRow + items.length;
             orcamentoData.push([]);
-            orcamentoData.push(['', '', '', 'TOTAL GERAL:', { f: `SUM(E${startRow}:E${totalRow-1})` }]);
+            orcamentoData.push(['', '', '', 'TOTAL GERAL:', totalGeral]);
 
             const wsOrcamento = XLSX.utils.aoa_to_sheet(orcamentoData);
-            wsOrcamento['!cols'] = [{ wch: 40 }, { wch: 15 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
-            wsOrcamento['!merges'] = [
-                { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } },
-                { s: { r: 2, c: 2 }, e: { r: 2, c: 3 } }
+            
+            // Configurar largura das colunas
+            wsOrcamento['!cols'] = [
+                { wch: 40 }, // Item
+                { wch: 15 },  // Quantidade
+                { wch: 18 },  // Valor Unitário
+                { wch: 18 },  // Instalação
+                { wch: 18 }   // Total
             ];
 
-            XLSX.utils.book_append_sheet(wb, wsValores, 'VALORES');
+            // Mesclar células do título
+            wsOrcamento['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }
+            ];
+
             XLSX.utils.book_append_sheet(wb, wsOrcamento, 'ORÇAMENTO');
             XLSX.writeFile(wb, 'Orcamento_Seguranca_Eletronica.xlsx');
         }
